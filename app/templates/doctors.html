@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Врачи поликлиники{% endblock %}
+{% block content %}
+<h2>Список врачей</h2>
+<ul class="list-group">
+{% for d in doctors %}
+<li class="list-group-item">
+    <strong>{{ d.user.full_name or d.user.username }}</strong> — {{ d.specialty }}
+    <br>
+    Кабинет: {{ d.cabinet or '—' }}
+    <div class="mt-2">
+        <a href="{{ url_for('make_appointment', doctor_id=d.id) }}" class="btn btn-sm btn-primary">Записаться</a>
+    </div>
+</li>
+{% endfor %}
+</ul>
+{% endblock %}

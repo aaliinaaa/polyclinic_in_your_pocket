@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Запись на приём{% endblock %}
+{% block content %}
+<h2>Запись к врачу: {{ doctor.user.full_name }}</h2>
+<p>Специальность: {{ doctor.specialty }} | Кабинет: {{ doctor.cabinet }}</p>
+
+<form method="POST">
+    <div class="mb-3">
+        <label>Дата</label>
+        <input type="date" name="date" class="form-control" min="{{ today }}" required>
+    </div>
+    <div class="mb-3">
+        <label>Время</label>
+        <input type="time" name="time" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Записаться</button>
+    <a href="{{ url_for('doctors') }}" class="btn btn-secondary">Назад</a>
+</form>
+
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.querySelector('input[type="date"]').setAttribute('min', today);
+</script>
+{% endblock %}

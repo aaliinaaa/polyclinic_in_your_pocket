@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Личный кабинет пациента</h1>
+<p>Добро пожаловать, {{ current_user.username }}!</p>
+<div class="menu">
+    <a href="#" class="btn">Записаться на прием</a>
+    <a href="#" class="btn">Мои записи</a>
+    <a href="#" class="btn">Медицинская карта</a>
+</div>
+{% endblock %}

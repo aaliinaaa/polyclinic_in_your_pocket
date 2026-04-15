@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Кабинет врача</h1>
+<p>Доктор {{ current_user.username }}, специальность: {{ current_user.specialty or 'Не указана' }}</p>
+<div class="menu">
+    <a href="#" class="btn">Мое расписание</a>
+    <a href="#" class="btn">Пациенты на сегодня</a>
+</div>
+{% endblock %}
