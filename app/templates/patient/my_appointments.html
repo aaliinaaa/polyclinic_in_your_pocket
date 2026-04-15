@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Мои записи</h1>
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <tr style="background-color: #f2f2f2;">
+        <th style="border: 1px solid #ddd; padding: 8px;">Врач</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Дата и Время</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Статус</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Действие</th>
+    </tr>
+    {% for appt in appointments %}
+    <tr>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{ appt.doctor.username }} ({{ appt.doctor.specialty }})</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{ appt.slot.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{ appt.status }}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            {% if appt.status == 'scheduled' and appt.slot.start_time > now() %}
+            <form action="{{ url_for('patient.cancel_appointment', appointment_id=appt.id) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите отменить запись?');">
+                <button type="submit" class="btn" style="background-color: #ff4d4d; color: white;">Отменить</button>
+            </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="4" style="border: 1px solid #ddd; padding: 8px;">У вас нет активных записей.</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

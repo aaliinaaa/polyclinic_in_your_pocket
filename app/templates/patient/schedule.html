@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Расписание врача: {{ doctor.username }}</h1>
+<a href="{{ url_for('patient.list_doctors') }}">← Назад к списку врачей</a>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <tr style="background-color: #f2f2f2;">
+        <th style="border: 1px solid #ddd; padding: 8px;">Дата и Время</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Статус</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Действие</th>
+    </tr>
+    {% for slot in slots %}
+    <tr>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{ slot.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            {% if slot.is_available %}
+                <span style="color: green;">Свободно</span>
+            {% else %}
+                <span style="color: red;">Занято</span>
+            {% endif %}
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            {% if slot.is_available %}
+            <!-- Исправленная форма -->
+            <form action="{{ url_for('patient.book_appointment', slot_id=slot.id) }}" method="post">
+                <!-- CSRF токен обязателен для Flask-WTF/Flask -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn" style="cursor: pointer;">Записаться</button>
+            </form>
+            {% else %}
+                -
+            {% endif %}
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="3" style="border: 1px solid #ddd; padding: 8px;">Расписание на ближайшую неделю пусто.</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Список врачей</h1>
+<div class="doctors-list">
+    {% for doctor in doctors %}
+    <div class="doctor-card" style="border: 1px solid #ccc; padding: 15px; margin-bottom: 10px;">
+        <h3>{{ doctor.username }}</h3>
+        <p><strong>Специальность:</strong> {{ doctor.specialty or 'Не указана' }}</p>
+        <p><strong>Кабинет:</strong> {{ doctor.office_number or 'Не указан' }}</p>
+        <a href="{{ url_for('patient.view_schedule', doctor_id=doctor.id) }}" class="btn">Посмотреть расписание</a>
+    </div>
+    {% else %}
+    <p>Врачей пока нет.</p>
+    {% endfor %}
+</div>
+{% endblock %}

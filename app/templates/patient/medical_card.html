@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Электронная медицинская карта</h1>
+<p>Пациент: <strong>{{ current_user.username }}</strong></p>
+<p>Полис ОМС: <strong>{{ current_user.oms_number or 'Не указан' }}</strong></p>
+
+<div style="margin-top: 20px; padding: 20px; border: 1px solid #eee; border-radius: 5px; background-color: #f9f9f9;">
+    <h3>История посещений и диагнозы</h3>
+    <p style="color: #666;">На данный момент в вашей карте нет записей. Данные появятся после первого посещения врача.</p>
+    
+    <!-- Заготовка для будущего списка записей -->
+    <!-- 
+    {% for record in history %}
+    <div class="record">
+        <p><strong>Дата:</strong> {{ record.date }}</p>
+        <p><strong>Врач:</strong> {{ record.doctor_name }}</p>
+        <p><strong>Диагноз:</strong> {{ record.diagnosis }}</p>
+    </div>
+    {% endfor %}
+    -->
+</div>
+
+<a href="{{ url_for('patient.dashboard') }}" style="margin-top: 20px; display: inline-block;">← Вернуться в кабинет</a>
+{% endblock %}
