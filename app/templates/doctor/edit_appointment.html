@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Прием пациента: {{ appointment.patient.username }}</h1>
+<p>Дата: {{ appointment.slot.start_time.strftime('%d.%m.%Y %H:%M') }}</p>
+
+<form method="post" style="max-width: 600px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    
+    <div style="margin-bottom: 15px;">
+        <label for="diagnosis" style="display: block; font-weight: bold;">Диагноз:</label>
+        <textarea id="diagnosis" name="diagnosis" rows="3" style="width: 100%;">{{ appointment.diagnosis or '' }}</textarea>
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <label for="prescription" style="display: block; font-weight: bold;">Назначения и рекомендации:</label>
+        <textarea id="prescription" name="prescription" rows="5" style="width: 100%;">{{ appointment.prescription or '' }}</textarea>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label for="status" style="display: block; font-weight: bold;">Статус приема:</label>
+        <select id="status" name="status" style="padding: 5px;">
+            <option value="scheduled" {% if appointment.status == 'scheduled' %}selected{% endif %}>Запланирован</option>
+            <option value="completed" {% if appointment.status == 'completed' %}selected{% endif %}>Завершен (Принят)</option>
+            <option value="cancelled" {% if appointment.status == 'cancelled' %}selected{% endif %}>Отменен</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Сохранить данные</button>
+    <a href="{{ url_for('doctor.dashboard') }}" style="margin-left: 10px;">Отмена</a>
+</form>
+{% endblock %}

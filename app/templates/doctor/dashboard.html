@@ -1,9 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Кабинет врача</h1>
-<p>Доктор {{ current_user.username }}, специальность: {{ current_user.specialty or 'Не указана' }}</p>
-<div class="menu">
-    <a href="#" class="btn">Мое расписание</a>
-    <a href="#" class="btn">Пациенты на сегодня</a>
+<h1>Кабинет врача: {{ current_user.username }}</h1>
+<p>Специальность: {{ current_user.specialty or 'Не указана' }} | Кабинет: {{ current_user.office_number or 'Не указан' }}</p>
+
+<div style="margin: 20px 0;">
+    <a href="{{ url_for('doctor.schedule') }}" class="btn" style="background-color: #17a2b8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Мое расписание</a>
 </div>
+
+<h2>Записи на сегодня</h2>
+{% if appointments %}
+<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+    <tr style="background-color: #f2f2f2;">
+        <th style="border: 1px solid #ddd; padding: 8px;">Время</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Пациент</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Статус</th>
+        <th style="border: 1px solid #ddd; padding: 8px;">Действия</th>
+    </tr>
+    {% for appt in appointments %}
+    <tr>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{ appt.slot.start_time.strftime('%H:%M') }}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            {{ appt.patient.username }}<br>
+            <small style="color: gray;">{{ appt.patient.phone }}</small>
+        </td>
+        <td style="border: 1px solid #ddd; padding: 8px;">{{ appt.status }}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">
+            <a href="{{ url_for('doctor.edit_appointment', appointment_id=appt.id) }}" class="btn" style="background-color: #007bff; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px;">Принять / Карта</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>На сегодня записей нет.</p>
+{% endif %}
 {% endblock %}

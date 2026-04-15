@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash # pyright: ignore[reportMissingImports]
+from flask_login import UserMixin # pyright: ignore[reportMissingImports]
 from app import db, login_manager
 
 @login_manager.user_loader
@@ -38,6 +38,23 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f'<User {self.username}>'
+
+    def get_today_appointments(self):
+        """Получает список записей на сегодня для врача"""
+        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        
+        # Явный join с ScheduleSlot для фильтрации по времени
+        return Appointment.query\
+            .join(ScheduleSlot, Appointment.slot_id == ScheduleSlot.id)\
+            .filter(
+                Appointment.doctor_id == self.id,
+                ScheduleSlot.start_time >= today_start,
+                ScheduleSlot.start_time < today_end,
+                Appointment.status == 'scheduled'
+            )\
+            .order_by(ScheduleSlot.start_time)\
+            .all()
 
 class ScheduleSlot(db.Model):
     """Временной слот в расписании врача"""

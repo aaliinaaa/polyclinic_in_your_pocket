@@ -1,6 +1,6 @@
 # app/patient/routes.py
-from flask import render_template, redirect, url_for, flash, request
-from flask_login import login_required, current_user
+from flask import render_template, redirect, url_for, flash, request # pyright: ignore[reportMissingImports]
+from flask_login import login_required, current_user # pyright: ignore[reportMissingImports]
 from app.patient import bp
 from app.utils import role_required, log_action
 from app.models import User, ScheduleSlot, Appointment, db
@@ -119,7 +119,12 @@ def cancel_appointment(appointment_id):
 @login_required
 @role_required('patient')
 def medical_card():
-    """Просмотр медицинской карты (Требование 1.10.3)"""
-    # В будущем здесь будет запрос к БД за историей болезни
-    # Пока просто отображаем шаблон
-    return render_template('patient/medical_card.html', title='Медицинская карта')
+    """Просмотр медицинской карты (история приемов)"""
+    # Используем join, чтобы иметь доступ к полям таблицы ScheduleSlot для сортировки
+    appointments = Appointment.query\
+        .join(ScheduleSlot, Appointment.slot_id == ScheduleSlot.id)\
+        .filter(Appointment.patient_id == current_user.id)\
+        .order_by(ScheduleSlot.start_time.desc())\
+        .all()
+    
+    return render_template('patient/medical_card.html', title='Медицинская карта', appointments=appointments)

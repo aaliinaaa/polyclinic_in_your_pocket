@@ -42,7 +42,7 @@ def create_app(config_class=Config):
     @app.context_processor
     def utility_processor():
         from flask_login import current_user
-        from datetime import datetime
-        return dict(current_user=current_user, now=datetime.now)
+        from datetime import datetime # Добавляем импорт
+        return dict(current_user=current_user, now=datetime.now, datetime=datetime)
 
     return app

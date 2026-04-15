@@ -4,20 +4,35 @@
 <p>Пациент: <strong>{{ current_user.username }}</strong></p>
 <p>Полис ОМС: <strong>{{ current_user.oms_number or 'Не указан' }}</strong></p>
 
-<div style="margin-top: 20px; padding: 20px; border: 1px solid #eee; border-radius: 5px; background-color: #f9f9f9;">
-    <h3>История посещений и диагнозы</h3>
-    <p style="color: #666;">На данный момент в вашей карте нет записей. Данные появятся после первого посещения врача.</p>
-    
-    <!-- Заготовка для будущего списка записей -->
-    <!-- 
-    {% for record in history %}
-    <div class="record">
-        <p><strong>Дата:</strong> {{ record.date }}</p>
-        <p><strong>Врач:</strong> {{ record.doctor_name }}</p>
-        <p><strong>Диагноз:</strong> {{ record.diagnosis }}</p>
-    </div>
-    {% endfor %}
-    -->
+<div style="margin-top: 20px;">
+    <h3>История посещений</h3>
+    {% if appointments %}
+        {% for appt in appointments %}
+        <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; background-color: #fff;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">
+                <strong>{{ appt.slot.start_time.strftime('%d.%m.%Y %H:%M') }}</strong>
+                <span>Врач: {{ appt.doctor.username }} ({{ appt.doctor.specialty }})</span>
+                <span style="color: {% if appt.status == 'completed' %}green{% elif appt.status == 'cancelled' %}red{% else %}orange{% endif %};">
+                    {{ appt.status }}
+                </span>
+            </div>
+            
+            {% if appt.diagnosis %}
+            <p><strong>Диагноз:</strong> {{ appt.diagnosis }}</p>
+            {% endif %}
+            
+            {% if appt.prescription %}
+            <p><strong>Назначения:</strong> {{ appt.prescription }}</p>
+            {% endif %}
+            
+            {% if not appt.diagnosis and not appt.prescription %}
+            <p style="color: gray; font-style: italic;">Данные еще не внесены врачом.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <p style="color: #666;">У вас пока нет записей о приемах.</p>
+    {% endif %}
 </div>
 
 <a href="{{ url_for('patient.dashboard') }}" style="margin-top: 20px; display: inline-block;">← Вернуться в кабинет</a>
