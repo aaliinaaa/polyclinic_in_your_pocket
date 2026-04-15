@@ -1,4 +1,5 @@
 # app/patient/routes.py
+import calendar
 from flask import render_template, redirect, url_for, flash, request # pyright: ignore[reportMissingImports]
 from flask_login import login_required, current_user # pyright: ignore[reportMissingImports]
 from app.patient import bp
@@ -24,24 +25,92 @@ def list_doctors():
 @login_required
 @role_required('patient')
 def view_schedule(doctor_id):
-    """Просмотр расписания врача (Требование 1.10.6)"""
+    """Просмотр расписания врача в виде календаря (Требование 1.10.6)"""
     doctor = User.query.get_or_404(doctor_id)
     if doctor.role != 'doctor':
         flash('Этот пользователь не является врачом.')
         return redirect(url_for('patient.list_doctors'))
     
-    # Получаем слоты на ближайшие 7 дней
-    today = datetime.now().date()
-    next_week = today + timedelta(days=7)
+    # Получаем год, месяц и день из запроса
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+    selected_day = request.args.get('day', type=int)
     
-    slots = ScheduleSlot.query.filter(
+    now = datetime.now()
+    if not year or not month:
+        year = now.year
+        month = now.month
+        
+    # Создаем объект календаря
+    cal = calendar.Calendar(firstweekday=0) # Понедельник - первый день
+    month_days = cal.monthdayscalendar(year, month)
+    
+    # Диапазон дат для запроса к БД (весь месяц)
+    start_date = datetime(year, month, 1)
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1) - timedelta(seconds=1)
+    else:
+        end_date = datetime(year, month + 1, 1) - timedelta(seconds=1)
+        
+    # Загружаем все слоты врача за выбранный месяц
+    all_slots = ScheduleSlot.query.filter(
         ScheduleSlot.doctor_id == doctor_id,
-        ScheduleSlot.start_time >= datetime.combine(today, datetime.min.time()),
-        ScheduleSlot.start_time <= datetime.combine(next_week, datetime.max.time())
+        ScheduleSlot.start_time >= start_date,
+        ScheduleSlot.start_time <= end_date
     ).order_by(ScheduleSlot.start_time).all()
     
-    return render_template('patient/schedule.html', title=f'Расписание: {doctor.username}', doctor=doctor, slots=slots)
+    # Группируем слоты по дням для отображения в календаре
+    slots_by_day = {}
+    for slot in all_slots:
+        day_key = slot.start_time.day
+        if day_key not in slots_by_day:
+            slots_by_day[day_key] = []
+        slots_by_day[day_key].append(slot)
 
+    # Подсчитываем количество свободных слотов для каждого дня
+    free_slots_count = {}
+    for day, slots in slots_by_day.items():
+        free_slots_count[day] = sum(1 for s in slots if s.is_available)
+
+    # Если выбран конкретный день, готовим список слотов для отображения (для совместимости, если нужно)
+    selected_slots = []
+    if selected_day and selected_day in slots_by_day:
+        selected_slots = [s for s in slots_by_day[selected_day] if s.start_time > now]
+
+    # Названия месяцев
+    month_names = [
+        "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    ]
+    
+    # Ссылки для переключения месяцев
+    prev_month = month - 1
+    prev_year = year
+    if prev_month < 1:
+        prev_month = 12
+        prev_year -= 1
+        
+    next_month = month + 1
+    next_year = year
+    if next_month > 12:
+        next_month = 1
+        next_year += 1
+
+    return render_template('patient/schedule.html', 
+                           title=f'Расписание: {doctor.username}', 
+                           doctor=doctor,
+                           month_days=month_days,
+                           year=year,
+                           month=month,
+                           month_name=month_names[month-1],
+                           free_slots_count=free_slots_count,
+                           slots_by_day=slots_by_day, # <-- Добавлено!
+                           selected_day=selected_day,
+                           selected_slots=selected_slots,
+                           prev_year=prev_year, prev_month=prev_month,
+                           next_year=next_year, next_month=next_month)
+
+                           
 @bp.route('/book/<int:slot_id>', methods=['POST'])
 @login_required
 @role_required('patient')

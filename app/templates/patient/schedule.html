@@ -1,41 +1,126 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Расписание врача: {{ doctor.username }}</h1>
-<a href="{{ url_for('patient.list_doctors') }}">← Назад к списку врачей</a>
+<div class="schedule-container">
+    <h1>Запись к врачу: {{ doctor.username }}</h1>
+    <p style="color: gray;">{{ doctor.specialty }}, Кабинет {{ doctor.office_number }}</p>
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>{{ month_name }} {{ year }}</h2>
+        <div>
+            <a href="{{ url_for('patient.view_schedule', doctor_id=doctor.id, year=prev_year, month=prev_month) }}" class="btn" style="background-color: #6c757d; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px;">&lt; Пред.</a>
+            <a href="{{ url_for('patient.view_schedule', doctor_id=doctor.id, year=next_year, month=next_month) }}" class="btn" style="background-color: #6c757d; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; margin-left: 5px;">След. &gt;</a>
+        </div>
+    </div>
 
-<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-    <tr style="background-color: #f2f2f2;">
-        <th style="border: 1px solid #ddd; padding: 8px;">Дата и Время</th>
-        <th style="border: 1px solid #ddd; padding: 8px;">Статус</th>
-        <th style="border: 1px solid #ddd; padding: 8px;">Действие</th>
-    </tr>
-    {% for slot in slots %}
-    <tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">{{ slot.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">
-            {% if slot.is_available %}
-                <span style="color: green;">Свободно</span>
-            {% else %}
-                <span style="color: red;">Занято</span>
-            {% endif %}
-        </td>
-        <td style="border: 1px solid #ddd; padding: 8px;">
-            {% if slot.is_available %}
-            <!-- Исправленная форма -->
-            <form action="{{ url_for('patient.book_appointment', slot_id=slot.id) }}" method="post">
-                <!-- CSRF токен обязателен для Flask-WTF/Flask -->
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                <button type="submit" class="btn" style="cursor: pointer;">Записаться</button>
-            </form>
-            {% else %}
-                -
-            {% endif %}
-        </td>
-    </tr>
-    {% else %}
-    <tr>
-        <td colspan="3" style="border: 1px solid #ddd; padding: 8px;">Расписание на ближайшую неделю пусто.</td>
-    </tr>
-    {% endfor %}
-</table>
+    <!-- Календарная сетка -->
+    <table style="width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); table-layout: fixed;">
+        <colgroup>
+            <col style="width: 14.28%;">
+            <col style="width: 14.28%;">
+            <col style="width: 14.28%;">
+            <col style="width: 14.28%;">
+            <col style="width: 14.28%;">
+            <col style="width: 14.28%;">
+            <col style="width: 14.28%;">
+        </colgroup>
+        <thead>
+            <tr style="background-color: #007bff; color: white;">
+                <th style="padding: 10px; border: 1px solid #ddd;">Пн</th>
+                <th style="padding: 10px; border: 1px solid #ddd;">Вт</th>
+                <th style="padding: 10px; border: 1px solid #ddd;">Ср</th>
+                <th style="padding: 10px; border: 1px solid #ddd;">Чт</th>
+                <th style="padding: 10px; border: 1px solid #ddd;">Пт</th>
+                <th style="padding: 10px; border: 1px solid #ddd;">Сб</th>
+                <th style="padding: 10px; border: 1px solid #ddd;">Вс</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in month_days %}
+            <tr>
+                {% for day in week %}
+                    {% if day == 0 %}
+                        <td style="border: 1px solid #ddd; height: 150px; background-color: #f9f9f9;"></td>
+                    {% else %}
+                        {% set current_date = datetime(year, month, day).date() %}
+                        {% set count = free_slots_count.get(day, 0) %}
+                        {% set day_slots = slots_by_day.get(day, []) %}
+                        
+                        <!-- Ячейка дня -->
+                        <td style="border: 1px solid #ddd; min-height: 150px; vertical-align: top; padding: 5px; text-align: center; 
+                                   background-color: {% if count > 0 %}#e8f5e9{% else %}#fff{% endif %}; position: relative;">
+                            
+                            <!-- Заголовок даты -->
+                            <div style="font-weight: bold; font-size: 1.2em; margin-bottom: 5px; cursor: {% if day_slots %}pointer{% else %}default{% endif %};"
+                                 {% if day_slots %}onclick="toggleSlots({{ day }})"{% endif %}>
+                                {{ day }}
+                            </div>
+                            
+                            {% if day_slots %}
+                                <div style="font-size: 0.8em; color: #28a745; margin-bottom: 5px;">
+                                    Есть места
+                                </div>
+                                
+                                <!-- Скрытый контейнер со слотами -->
+                                <div id="slots-{{ day }}" style="display: none; margin-top: 10px; text-align: left; max-height: 250px; overflow-y: auto; border-top: 1px solid #ccc; padding-top: 5px;">
+                                    
+                                    <!-- Сетка в два столбика -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                        {% for slot in day_slots %}
+                                            {% if slot.start_time > now() %}
+                                                {% if slot.is_available %}
+                                                    <!-- Свободный слот (Кнопка записи) -->
+                                                    <form action="{{ url_for('patient.book_appointment', slot_id=slot.id) }}" method="post">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" style="width: 100%; padding: 8px 0; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
+                                                            {{ slot.start_time.strftime('%H:%M') }}
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <!-- Занятый слот (Неактивный блок) -->
+                                                    <div style="width: 100%; padding: 8px 0; background-color: #dc3545; color: white; border-radius: 4px; font-size: 0.9em; text-align: center; opacity: 0.6; cursor: not-allowed;">
+                                                        {{ slot.start_time.strftime('%H:%M') }}
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    
+                                </div>
+                            {% else %}
+                                <span style="color: #ccc; font-size: 0.8em;">Нет слотов</span>
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('patient.list_doctors') }}">← Назад к списку врачей</a>
+    </div>
+</div>
+
+<!-- Скрипт для переключения видимости слотов -->
+<script>
+    function toggleSlots(day) {
+        // Скрываем все открытые списки, кроме текущего
+        var allSlots = document.querySelectorAll('[id^="slots-"]');
+        var target = document.getElementById('slots-' + day);
+        
+        allSlots.forEach(function(el) {
+            if (el !== target) {
+                el.style.display = 'none';
+            }
+        });
+
+        // Переключаем текущий
+        if (target.style.display === 'none') {
+            target.style.display = 'block';
+        } else {
+            target.style.display = 'none';
+        }
+    }
+</script>
 {% endblock %}
