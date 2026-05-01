@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 @login_required
 @role_required('patient')
 def dashboard():
+    from app.utils import check_appointment_notifications
+    check_appointment_notifications(current_user) # <-- Добавлено
     return render_template('patient/dashboard.html', title='Кабинет пациента')
 
 @bp.route('/doctors')
