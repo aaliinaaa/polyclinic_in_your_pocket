@@ -129,10 +129,10 @@ def book_appointment(slot_id):
 
     # Создание записи
     appointment = Appointment(
-        patient_id=current_user.id,
-        doctor_id=slot.doctor_id,
-        slot_id=slot.id,
-        status='scheduled'
+        patient_id=current_user.id, # type: ignore
+        doctor_id=slot.doctor_id, # type: ignore
+        slot_id=slot.id, # type: ignore
+        status='scheduled' # type: ignore
     )
     
     # Занимаем слот
