@@ -12,8 +12,8 @@
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">
                 <strong>{{ appt.slot.start_time.strftime('%d.%m.%Y %H:%M') }}</strong>
                 <span>Врач: {{ appt.doctor.username }} ({{ appt.doctor.specialty }})</span>
-                <span style="color: {% if appt.status == 'completed' %}green{% elif appt.status == 'cancelled' %}red{% else %}orange{% endif %};">
-                    {{ appt.status }}
+                <span style="color: {% if appt.display_status == 'Запланировано' %}#007bff{% elif appt.display_status == 'Посещено' %}#28a745{% elif appt.display_status == 'Пропущено' %}#dc3545{% else %}#6c757d{% endif %}; font-weight: bold;">
+                    {{ appt.display_status }}
                 </span>
             </div>
             

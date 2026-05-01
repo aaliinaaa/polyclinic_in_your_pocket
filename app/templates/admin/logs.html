@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Журнал действий</h1>
+<table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 0 5px rgba(0,0,0,0.1);">
+    <tr style="background:#f2f2f2;">
+        <th style="border:1px solid #ddd; padding:10px;">Время</th>
+        <th style="border:1px solid #ddd; padding:10px;">Пользователь</th>
+        <th style="border:1px solid #ddd; padding:10px;">Действие</th>
+        <th style="border:1px solid #ddd; padding:10px;">Описание</th>
+        <th style="border:1px solid #ddd; padding:10px;">IP</th>
+    </tr>
+    {% for log in logs %}
+    <tr>
+        <td style="border:1px solid #ddd; padding:10px;">{{ log.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+        <td style="border:1px solid #ddd; padding:10px;">
+            {% if log.user %}{{ log.user.username }}{% else %}Система{% endif %}
+        </td>
+        <td style="border:1px solid #ddd; padding:10px;"><code>{{ log.action_type }}</code></td>
+        <td style="border:1px solid #ddd; padding:10px;">{{ log.description }}</td>
+        <td style="border:1px solid #ddd; padding:10px; font-family:monospace;">{{ log.ip_address or '-' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="border:1px solid #ddd; padding:10px; text-align:center;">Записей пока нет.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

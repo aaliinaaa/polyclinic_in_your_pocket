@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Управление расписанием: {{ doctor.username }}</h1>
+<a href="{{ url_for('admin.manage_doctors') }}" style="color:#007bff; margin-bottom:20px; display:inline-block;">← Назад к врачам</a>
+
+<div style="background:white; padding:15px; border-radius:8px; margin-bottom:20px;">
+    <h3>Добавить новый слот</h3>
+    <form action="{{ url_for('admin.add_slot') }}" method="post" style="display:flex; gap:10px; align-items:flex-end;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="doctor_id" value="{{ doctor.id }}"/>
+        <div>
+            <label>Дата и время начала:</label><br>
+            <input type="datetime-local" name="start_time" required style="padding:5px;">
+        </div>
+        <button type="submit" style="padding:6px 15px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Добавить (30 мин)</button>
+    </form>
+</div>
+
+<table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 0 5px rgba(0,0,0,0.1);">
+    <tr style="background:#f2f2f2;">
+        <th style="border:1px solid #ddd; padding:10px;">Начало</th>
+        <th style="border:1px solid #ddd; padding:10px;">Конец</th>
+        <th style="border:1px solid #ddd; padding:10px;">Статус</th>
+        <th style="border:1px solid #ddd; padding:10px;">Действие</th>
+    </tr>
+    {% for slot in slots %}
+    <tr>
+        <td style="border:1px solid #ddd; padding:10px;">{{ slot.start_time.strftime('%d.%m.%Y %H:%M') }}</td>
+        <td style="border:1px solid #ddd; padding:10px;">{{ slot.end_time.strftime('%d.%m.%Y %H:%M') }}</td>
+        <td style="border:1px solid #ddd; padding:10px; color:{% if slot.is_available %}green{% else %}red{% endif %};">
+            {% if slot.is_available %}Свободен{% else %}Занят ({{ slot.appointment.patient.username }}){% endif %}
+        </td>
+        <td style="border:1px solid #ddd; padding:10px;">
+            {% if slot.is_available %}
+            <form action="{{ url_for('admin.delete_slot', slot_id=slot.id) }}" method="post" onsubmit="return confirm('Удалить слот?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" style="border:none; background:#dc3545; color:white; padding:5px 10px; border-radius:3px; cursor:pointer;">Удалить</button>
+            </form>
+            {% else %}
+            <span style="color:#999;">Заблокировано</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" style="border:1px solid #ddd; padding:10px; text-align:center;">Расписание пусто.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

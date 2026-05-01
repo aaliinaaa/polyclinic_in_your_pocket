@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h1>Список врачей</h1>
+    <a href="{{ url_for('admin.add_doctor') }}" class="btn" style="background:#28a745; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">+ Добавить врача</a>
+</div>
+
+<table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 0 5px rgba(0,0,0,0.1);">
+    <tr style="background:#f2f2f2;">
+        <th style="border:1px solid #ddd; padding:10px;">ФИО</th>
+        <th style="border:1px solid #ddd; padding:10px;">Специальность</th>
+        <th style="border:1px solid #ddd; padding:10px;">Кабинет</th>
+        <th style="border:1px solid #ddd; padding:10px;">Email</th>
+        <th style="border:1px solid #ddd; padding:10px;">Действия</th>
+    </tr>
+    {% for doc in doctors %}
+    <tr>
+        <td style="border:1px solid #ddd; padding:10px;">{{ doc.username }}</td>
+        <td style="border:1px solid #ddd; padding:10px;">{{ doc.specialty }}</td>
+        <td style="border:1px solid #ddd; padding:10px;">{{ doc.office_number }}</td>
+        <td style="border:1px solid #ddd; padding:10px;">{{ doc.email }}</td>
+        <td style="border:1px solid #ddd; padding:10px; display:flex; gap:10px;">
+            <a href="{{ url_for('admin.edit_doctor', doctor_id=doc.id) }}" style="color:#007bff;">Изменить</a>
+            <a href="{{ url_for('admin.manage_schedule', doctor_id=doc.id) }}" style="color:#17a2b8;">Расписание</a>
+            <form action="{{ url_for('admin.delete_doctor', doctor_id=doc.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Удалить врача? Это действие нельзя отменить.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" style="border:none; background:none; color:#dc3545; cursor:pointer;">Удалить</button>
+            </form>
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="border:1px solid #ddd; padding:10px; text-align:center;">Врачей пока нет.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

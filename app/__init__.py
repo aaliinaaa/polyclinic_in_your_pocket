@@ -7,7 +7,7 @@ from config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
-login_manager = LoginManager()
+login_manager: LoginManager = LoginManager()
 csrf = CSRFProtect() # Создаем экземпляр CSRF
 
 login_manager.login_view = 'auth.login'

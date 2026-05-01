@@ -151,8 +151,12 @@ def book_appointment(slot_id):
 @login_required
 @role_required('patient')
 def my_appointments():
-    """Просмотр своих записей (Требование 1.10.8)"""
-    appointments = Appointment.query.filter_by(patient_id=current_user.id).order_by(Appointment.created_at.desc()).all()
+    # Добавлен join для загрузки времени слота вместе с записями
+    appointments = Appointment.query\
+        .join(ScheduleSlot, Appointment.slot_id == ScheduleSlot.id)\
+        .filter(Appointment.patient_id == current_user.id)\
+        .order_by(ScheduleSlot.start_time.desc())\
+        .all()
     return render_template('patient/my_appointments.html', title='Мои записи', appointments=appointments)
 
 @bp.route('/cancel/<int:appointment_id>', methods=['POST'])

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Добавить' if not doctor else 'Редактировать' }} врача</h1>
+<form method="post" style="max-width:500px; background:white; padding:20px; border-radius:8px;">
+    {{ form.hidden_tag() }}
+    <p>{{ form.username.label }}<br>{{ form.username(size=40) }}</p>
+    <p>{{ form.email.label }}<br>{{ form.email(size=40) }}</p>
+    <p>{{ form.phone.label }}<br>{{ form.phone(size=40) }}</p>
+    <p>{{ form.specialty.label }}<br>{{ form.specialty(size=40) }}</p>
+    <p>{{ form.office_number.label }}<br>{{ form.office_number(size=40) }}</p>
+    <p>{{ form.password.label }}<br>{{ form.password(size=40) }}</p>
+    <p>{{ form.submit() }}</p>
+</form>
+{% endblock %}

@@ -32,3 +32,17 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(phone=phone.data).first()
         if user is not None:
             raise ValidationError('Этот телефон уже зарегистрирован.')
+        
+class DoctorForm(FlaskForm):
+    username = StringField('ФИО', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Телефон', validators=[DataRequired()])
+    specialty = StringField('Специальность', validators=[DataRequired()])
+    office_number = StringField('Номер кабинета', validators=[DataRequired()])
+    password = PasswordField('Пароль для первого входа', validators=[DataRequired()])
+    submit = SubmitField('Сохранить')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user is not None:
+            raise ValidationError('Этот email уже зарегистрирован.')        

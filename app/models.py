@@ -91,6 +91,24 @@ class Appointment(db.Model):
     def __repr__(self):
         return f'<Appointment {self.id} Patient:{self.patient_id} Doctor:{self.doctor_id}>'
 
+    @property
+    def display_status(self):
+        from datetime import datetime
+        # Если запись отменена вручную, статус всегда "Отменено"
+        if self.status == 'cancelled':
+            return 'Отменено'
+            
+        now = datetime.now()
+        # Время приема еще не наступило
+        if self.slot.start_time > now:
+            return 'Запланировано'
+            
+        # Время приема прошло
+        # Если врач внес диагноз или назначения → "Посещено", иначе → "Пропущено"
+        if self.diagnosis or self.prescription:
+            return 'Посещено'
+        return 'Пропущено'
+    
 class ActionLog(db.Model):
     """Журнал действий (Требование 1.4.10)"""
     __tablename__ = 'action_logs'
