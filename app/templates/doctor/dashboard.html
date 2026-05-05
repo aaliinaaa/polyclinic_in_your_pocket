@@ -3,8 +3,9 @@
 <h1>Кабинет врача: {{ current_user.username }}</h1>
 <p>Специальность: {{ current_user.specialty or 'Не указана' }} | Кабинет: {{ current_user.office_number or 'Не указан' }}</p>
 
-<div style="margin: 20px 0;">
+<div style="margin: 20px 0; display: flex; gap: 15px; flex-wrap: wrap;">
     <a href="{{ url_for('doctor.schedule') }}" class="btn" style="background-color: #17a2b8; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Мое расписание</a>
+    <a href="{{ url_for('doctor.past_appointments') }}" class="btn" style="background-color: #6c757d; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Прошедшие приемы</a>
 </div>
 
 <h2>Записи на сегодня</h2>

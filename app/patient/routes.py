@@ -195,10 +195,13 @@ def cancel_appointment(appointment_id):
 @role_required('patient')
 def medical_card():
     """Просмотр медицинской карты (история приемов)"""
-    # Используем join, чтобы иметь доступ к полям таблицы ScheduleSlot для сортировки
+    # Исключаем запланированные и отмененные записи, показываем только завершенные
     appointments = Appointment.query\
         .join(ScheduleSlot, Appointment.slot_id == ScheduleSlot.id)\
-        .filter(Appointment.patient_id == current_user.id)\
+        .filter(
+            Appointment.patient_id == current_user.id,
+            Appointment.status.notin_(['scheduled', 'cancelled'])
+        )\
         .order_by(ScheduleSlot.start_time.desc())\
         .all()
     

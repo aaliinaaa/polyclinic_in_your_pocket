@@ -91,18 +91,26 @@ def schedule():
 @login_required
 @role_required('doctor')
 def edit_appointment(appointment_id):
-    """Редактирование записи / Заполнение медкарты (Требование 1.10.4)"""
     appointment = Appointment.query.get_or_404(appointment_id)
     
-    # Проверка прав: только врач, к которому запись, или админ может редактировать
     if appointment.doctor_id != current_user.id:
         flash('У вас нет прав для редактирования этой записи.')
         return redirect(url_for('doctor.dashboard'))
 
+    patient_history = Appointment.query.join(ScheduleSlot, Appointment.slot_id == ScheduleSlot.id)\
+        .filter(
+            Appointment.patient_id == appointment.patient_id,
+            Appointment.doctor_id == current_user.id,
+            Appointment.id != appointment_id,
+            Appointment.status == 'completed' # Исключаем запланированные
+        )\
+        .order_by(ScheduleSlot.start_time.desc())\
+        .all()
+
     if request.method == 'POST':
         diagnosis = request.form.get('diagnosis')
         prescription = request.form.get('prescription')
-        status = request.form.get('status') # scheduled, completed, cancelled
+        status = request.form.get('status')
         
         appointment.diagnosis = diagnosis
         appointment.prescription = prescription
@@ -110,12 +118,15 @@ def edit_appointment(appointment_id):
             appointment.status = status
             
         db.session.commit()
-        
         log_action('EDIT_MEDICAL_CARD', f'Врач {current_user.username} обновил данные приема #{appointment.id}')
         flash('Данные сохранены.')
         return redirect(url_for('doctor.dashboard'))
 
-    return render_template('doctor/edit_appointment.html', title='Прием пациента', appointment=appointment)
+    # Передаём историю в шаблон
+    return render_template('doctor/edit_appointment.html', 
+                           title='Прием пациента', 
+                           appointment=appointment, 
+                           patient_history=patient_history)
 
 @bp.route('/cancel-slot/<int:slot_id>', methods=['POST'])
 @login_required
@@ -140,3 +151,21 @@ def cancel_slot(slot_id):
     log_action('CANCEL_SLOT', f'Врач {current_user.username} удалил слот {slot.start_time}')
     flash('Слот удален.')
     return redirect(url_for('doctor.schedule'))
+
+@bp.route('/past-appointments')
+@login_required
+@role_required('doctor')
+def past_appointments():
+    """Просмотр истории прошедших приемов врача"""
+    now = datetime.now()
+    
+    # Получаем все приемы, время которых уже прошло
+    past_appts = Appointment.query.join(ScheduleSlot, Appointment.slot_id == ScheduleSlot.id)\
+        .filter(
+            Appointment.doctor_id == current_user.id,
+            ScheduleSlot.start_time < now
+        )\
+        .order_by(ScheduleSlot.start_time.desc())\
+        .all()
+        
+    return render_template('doctor/past_appointments.html', title='Прошедшие приемы', appointments=past_appts)

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>История прошедших приемов</h1>
+<a href="{{ url_for('doctor.dashboard') }}" style="color:#007bff; margin-bottom:20px; display:inline-block;">← На главную</a>
+
+{% if appointments %}
+<!-- Обертка для горизонтальной прокрутки на маленьких экранах -->
+<div style="overflow-x: auto; background:white; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); margin-top: 10px;">
+    <table style="width:100%; border-collapse:collapse; min-width: 850px;">
+        <tr style="background:#f8f9fa;">
+            <th style="border:1px solid #ddd; padding:12px; text-align:left; white-space: nowrap;">Дата и время</th>
+            <th style="border:1px solid #ddd; padding:12px; text-align:left;">Пациент</th>
+            <th style="border:1px solid #ddd; padding:12px; text-align:left;">Диагноз</th>
+            <th style="border:1px solid #ddd; padding:12px; text-align:left;">Назначения</th>
+            <th style="border:1px solid #ddd; padding:12px; text-align:center; white-space: nowrap;">Действие</th>
+        </tr>
+        {% for appt in appointments %}
+        <tr>
+            <td style="border:1px solid #ddd; padding:12px; white-space:nowrap;">
+                {{ appt.slot.start_time.strftime('%d.%m.%Y %H:%M') }}
+            </td>
+            <td style="border:1px solid #ddd; padding:12px;">
+                <strong>{{ appt.patient.username }}</strong><br>
+                <small style="color:#666;">{{ appt.patient.phone }}</small>
+            </td>
+            <td style="border:1px solid #ddd; padding:12px;">
+                {{ appt.diagnosis or '<span style="color:#999; font-style:italic;">Не указан</span>' }}
+            </td>
+            <td style="border:1px solid #ddd; padding:12px;">
+                {{ appt.prescription or '<span style="color:#999; font-style:italic;">Не указаны</span>' }}
+            </td>
+            <td style="border:1px solid #ddd; padding:12px; text-align:center; white-space: nowrap;">
+                <a href="{{ url_for('doctor.edit_appointment', appointment_id=appt.id) }}"
+                   style="display: inline-block; background:#17a2b8; color:white; padding:8px 14px; border-radius:4px; text-decoration:none; font-size:0.9em;">
+                   Открыть карту
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% else %}
+<div style="background:white; padding:40px; text-align:center; border-radius:8px; margin-top:20px;">
+    <p style="font-size:1.1em; color:#666;">У вас пока нет прошедших приемов.</p>
+</div>
+{% endif %}
+{% endblock %}

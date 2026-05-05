@@ -3,11 +3,10 @@
 <h1>Управление расписанием: {{ doctor.username }}</h1>
 <a href="{{ url_for('admin.manage_doctors') }}" style="color:#007bff; margin-bottom:20px; display:inline-block;">← Назад к врачам</a>
 
-<!-- Панель автогенерации -->
+<!-- ПАНЕЛЬ ГЕНЕРАЦИИ (ВСЕГДА ВИДНА) -->
 <div style="background:white; padding:20px; border-radius:8px; margin-bottom:20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     <h3>Автоматическая генерация расписания</h3>
     
-    <!-- Форма генерации (добавлен id="gen-form") -->
     <form id="gen-form" action="{{ url_for('admin.generate_schedule_slots', doctor_id=doctor.id) }}" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         
@@ -42,18 +41,17 @@
                 {% endfor %}
             </div>
         </div>
-    </form> <!-- Форма генерации закрыта ЗДЕСЬ -->
+    </form>
 
-    <!-- Кнопки вынесены наружу, но работают корректно -->
     <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+        <button type="submit" form="gen-form" style="padding:10px 20px; background:#007bff; color:white; border:none; border-radius:5px; cursor:pointer; font-weight: bold; font-size:1em;">Сгенерировать слоты</button>
+        
         <form action="{{ url_for('admin.clear_schedule', doctor_id=doctor.id) }}" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <!-- Скрытое поле, которое будет хранить выбранный месяц -->
             <input type="hidden" name="month" id="clear-month-input" value="{{ datetime.now().strftime('%Y-%m') }}"/>
-            
-            <button type="submit" onclick="return confirm('Вы уверены, что хотите очистить расписание за выбранный месяц? Это действие нельзя отменить.');" 
+            <button type="submit" onclick="return confirm('Вы уверены, что хотите очистить расписание за выбранный месяц?');" 
                     style="padding:10px 20px; background:#dc3545; color:white; border:none; border-radius:5px; cursor:pointer; font-weight: bold; font-size:1em;">
-                Очистить расписание за месяц
+                Очистить расписание
             </button>
         </form>
     </div>
@@ -73,7 +71,7 @@
     </form>
 </div>
 
-<!-- Таблица существующих слотов -->
+<!-- Таблица слотов -->
 <table style="width:100%; border-collapse:collapse; background:white; box-shadow:0 0 5px rgba(0,0,0,0.1);">
     <tr style="background:#f2f2f2;">
         <th style="border:1px solid #ddd; padding:10px;">Начало</th>
@@ -105,38 +103,30 @@
 </table>
 
 <script>
-    // Динамический подсчёт слотов при выборе месяца
     const monthInput = document.getElementById('schedule-month');
     const infoSpan = document.getElementById('month-info');
+    const clearInput = document.getElementById('clear-month-input');
     const doctorId = {{ doctor.id }};
 
     function updateMonthInfo() {
-        const monthVal = monthInput.value;
-        if (!monthVal) return;
-        
+        const m = monthInput.value;
+        if (!m) return;
+        clearInput.value = m; // Синхронизация для очистки
         infoSpan.textContent = 'Проверка...';
-        fetch(`/admin/schedule/${doctorId}/slot-count?month=${monthVal}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.count > 0) {
-                    infoSpan.innerHTML = `В этом месяце уже есть <b>${data.count}</b> слотов`;
+        fetch(`/admin/schedule/${doctorId}/slot-count?month=${m}`)
+            .then(r => r.json())
+            .then(d => {
+                if (d.count > 0) {
+                    infoSpan.innerHTML = `В этом месяце уже <b>${d.count}</b> слотов`;
                     infoSpan.style.color = '#dc3545';
                 } else {
-                    infoSpan.textContent = 'Слотов в этом месяце нет';
+                    infoSpan.textContent = 'Слотов нет';
                     infoSpan.style.color = '#28a745';
                 }
             })
-            .catch(() => {
-                infoSpan.textContent = 'Ошибка проверки';
-                infoSpan.style.color = '#666';
-            });
+            .catch(() => infoSpan.textContent = '❌ Ошибка');
     }
-
-    monthInput.addEventListener('change', function() {
-    document.getElementById('clear-month-input').value = this.value; // Синхронизируем месяц для очистки
-    updateMonthInfo();
-});
-    // Запуск при загрузке страницы
+    monthInput.addEventListener('change', updateMonthInfo);
     window.addEventListener('DOMContentLoaded', updateMonthInfo);
 </script>
 {% endblock %}

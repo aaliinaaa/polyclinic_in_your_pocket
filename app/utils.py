@@ -50,8 +50,8 @@ def check_appointment_notifications(user):
         
         # Уведомление за ~24 часа (окно ±1 час, чтобы не пропустить из-за времени входа)
         if 23 <= diff_hours <= 25:
-            flash(f"📅 Напоминание: завтра в {appt.slot.start_time.strftime('%H:%M')} у вас приём у врача {appt.doctor.username}.", 'info')
+            flash(f"Напоминание: завтра в {appt.slot.start_time.strftime('%H:%M')} у вас приём у врача {appt.doctor.username}.", 'info')
             
         # Уведомление за ~2 часа
-        elif 1.5 <= diff_hours <= 2.5:
-            flash(f"⏰ Внимание: через {int(diff_hours)} часа(ов) у вас приём у врача {appt.doctor.username}. Пожалуйста, подготовьтесь.", 'warning')
+        elif 1.5 <= diff_hours <= 2.15:
+            flash(f"Внимание: через 2 часа у вас приём у врача {appt.doctor.username}.", 'warning')
