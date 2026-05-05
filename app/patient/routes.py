@@ -165,16 +165,16 @@ def my_appointments():
 @login_required
 @role_required('patient')
 def cancel_appointment(appointment_id):
-    """Отмена записи (Требование 1.10.9)"""
     appointment = Appointment.query.get_or_404(appointment_id)
     
     if appointment.patient_id != current_user.id:
         flash('У вас нет прав на отмену этой записи.')
         return redirect(url_for('patient.my_appointments'))
         
-    # Проверка: отмена не позднее чем за 24 часа (упрощенно: просто нельзя отменить прошедшие)
-    if appointment.slot.start_time < datetime.now():
-        flash('Нельзя отменить прошедший или текущий прием.')
+    now = datetime.now()
+    # Запрет отмены, если до приема осталось менее 24 часов (Требование 1.4.4)
+    if appointment.slot.start_time < now + timedelta(hours=24):
+        flash('Отмена записи возможна не позднее чем за 1 сутки до приёма.')
         return redirect(url_for('patient.my_appointments'))
 
     # Освобождаем слот

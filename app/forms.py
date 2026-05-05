@@ -33,6 +33,18 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError('Этот телефон уже зарегистрирован.')
         
+    def validate_username(self, username):
+        # 1. Проверка на дубликаты
+        user = User.query.filter_by(username=username.data).first()
+        if user is not None:
+            raise ValidationError('Такое ФИО уже зарегистрировано.')
+            
+        # 2. Проверка прикрепления к поликлинике (Требование 1.10.1)
+        from app.models import AttachedPatient
+        attached = AttachedPatient.query.filter_by(full_name=username.data).first()
+        if not attached:
+            raise ValidationError('Вы не прикреплены к данной поликлинике. Обратитесь в регистратуру или через Госуслуги.')
+        
 class DoctorForm(FlaskForm):
     username = StringField('ФИО', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])

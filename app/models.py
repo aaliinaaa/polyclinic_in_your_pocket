@@ -122,3 +122,9 @@ class ActionLog(db.Model):
 
     def __repr__(self):
         return f'<Log {self.action_type} by User {self.user_id}>'
+    
+class AttachedPatient(db.Model):
+    """Mock-таблица прикрепленных к поликлинике пациентов (Требование 1.10.1)"""
+    __tablename__ = 'attached_patients'
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(128), unique=True, nullable=False) # ФИО для сверки
