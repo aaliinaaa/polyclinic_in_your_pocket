@@ -39,10 +39,10 @@ class DoctorForm(FlaskForm):
     phone = StringField('Телефон', validators=[DataRequired()])
     specialty = StringField('Специальность', validators=[DataRequired()])
     office_number = StringField('Номер кабинета', validators=[DataRequired()])
-    password = PasswordField('Пароль для первого входа', validators=[DataRequired()])
+    password = PasswordField('Новый пароль (оставьте пустым, чтобы не менять)')
     submit = SubmitField('Сохранить')
 
-    def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
-        if user is not None:
-            raise ValidationError('Этот email уже зарегистрирован.')        
+    # def validate_email(self, email):
+    #     user = User.query.filter_by(email=email.data).first()
+    #     if user is not None:
+    #         raise ValidationError('Этот email уже зарегистрирован.')        

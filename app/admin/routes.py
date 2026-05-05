@@ -1,5 +1,5 @@
 # app/admin/routes.py
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app.admin import bp
 from app.utils import role_required, log_action
@@ -34,13 +34,18 @@ def manage_doctors():
 def add_doctor():
     form = DoctorForm()
     if form.validate_on_submit():
+        # Пароль обязателен только при создании
+        if not form.password.data:
+            flash('При добавлении врача пароль обязателен.')
+            return render_template('admin/edit_doctor.html', title='Добавить врача', form=form, doctor=None)
+            
         doctor = User(
-            username=form.username.data, # type: ignore
-            email=form.email.data, # type: ignore
-            phone=form.phone.data, # type: ignore
-            role='doctor', # type: ignore
-            specialty=form.specialty.data, # type: ignore
-            office_number=form.office_number.data # type: ignore
+            username=form.username.data,
+            email=form.email.data,
+            phone=form.phone.data,
+            role='doctor',
+            specialty=form.specialty.data,
+            office_number=form.office_number.data
         )
         doctor.set_password(form.password.data)
         db.session.add(doctor)
@@ -59,25 +64,37 @@ def edit_doctor(doctor_id):
         flash('Этот пользователь не является врачом.')
         return redirect(url_for('admin.manage_doctors'))
 
+    # Заполняем форму текущими данными врача
     form = DoctorForm(obj=doctor)
+    
     if form.validate_on_submit():
-        # Проверка email на уникальность (исключая текущего врача)
+        # Проверяем email на уникальность (исключая текущего врача)
         if User.query.filter(User.email == form.email.data, User.id != doctor.id).first():
-            flash('Этот email уже используется.')
+            form.email.errors.append('Этот email уже занят другим пользователем.')
+            # Не делаем redirect, чтобы страница осталась с заполненными полями и ошибкой
             return render_template('admin/edit_doctor.html', title='Редактировать врача', form=form, doctor=doctor)
-            
+
+        # Применяем изменения
         doctor.username = form.username.data
         doctor.email = form.email.data
         doctor.phone = form.phone.data
         doctor.specialty = form.specialty.data
         doctor.office_number = form.office_number.data
-        if form.password.data:
+        
+        # Обновляем пароль только если введено новое значение
+        if form.password.data and form.password.data.strip():
             doctor.set_password(form.password.data)
-            
-        db.session.commit()
-        log_action('EDIT_DOCTOR', f'Админ {current_user.username} изменил данные врача {doctor.username}')
-        flash('Данные врача обновлены.')
-        return redirect(url_for('admin.manage_doctors'))
+
+        try:
+            db.session.commit()
+            log_action('EDIT_DOCTOR', f'Админ {current_user.username} изменил данные врача {doctor.username}')
+            flash('Данные врача успешно обновлены.')
+            return redirect(url_for('admin.manage_doctors'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка базы данных: {str(e)}')
+
+    # Если валидация не прошла, просто возвращаем форму с подсветкой ошибок
     return render_template('admin/edit_doctor.html', title='Редактировать врача', form=form, doctor=doctor)
 
 @bp.route('/doctors/<int:doctor_id>/delete', methods=['POST'])
@@ -254,5 +271,74 @@ def generate_schedule_slots(doctor_id):
 
     db.session.commit()
     log_action('GENERATE_SCHEDULE', f'Админ {current_user.username} сгенерировал {created_count} слотов для врача {doctor.username} на {month_str}')
-    flash(f'✅ Успешно создано {created_count} слотов. Пропущено {skipped_count} из-за пересечений.')
+    flash(f'Успешно создано {created_count} слотов. Пропущено {skipped_count} из-за пересечений.')
+    return redirect(url_for('admin.manage_schedule', doctor_id=doctor_id))
+
+@bp.route('/schedule/<int:doctor_id>/slot-count')
+@login_required
+@role_required('admin')
+def get_slot_count(doctor_id):
+    """Возвращает количество слотов у врача в выбранном месяце (JSON)"""
+    month = request.args.get('month')
+    if not month:
+        return jsonify({'count': 0})
+    try:
+        year, m = map(int, month.split('-'))
+        _, last_day = calendar.monthrange(year, m)
+        start = datetime(year, m, 1)
+        end = datetime(year, m, last_day, 23, 59, 59)
+    except Exception:
+        return jsonify({'count': 0})
+
+    count = ScheduleSlot.query.filter(
+        ScheduleSlot.doctor_id == doctor_id,
+        ScheduleSlot.start_time >= start,
+        ScheduleSlot.start_time <= end
+    ).count()
+    return jsonify({'count': count, 'has_booked': ScheduleSlot.query.filter_by(doctor_id=doctor_id, is_available=False).first() is not None})
+
+@bp.route('/schedule/<int:doctor_id>/clear', methods=['POST'])
+@login_required
+@role_required('admin')
+def clear_schedule(doctor_id):
+    """Очищает расписание врача только за выбранный месяц"""
+    doctor = User.query.get_or_404(doctor_id)
+    if doctor.role != 'doctor':
+        flash('Ошибка доступа.', 'error')
+        return redirect(url_for('admin.manage_doctors'))
+
+    month = request.form.get('month')
+    if not month:
+        flash('Не указан месяц для очистки.', 'warning')
+        return redirect(url_for('admin.manage_schedule', doctor_id=doctor_id))
+
+    try:
+        year, m = map(int, month.split('-'))
+        _, last_day = calendar.monthrange(year, m)
+        start = datetime(year, m, 1)
+        end = datetime(year, m, last_day, 23, 59, 59)
+    except Exception:
+        flash('Неверный формат даты.', 'error')
+        return redirect(url_for('admin.manage_schedule', doctor_id=doctor_id))
+
+    # 🔒 Проверка: нельзя удалять занятые слоты в этом месяце
+    if ScheduleSlot.query.filter(
+        ScheduleSlot.doctor_id == doctor_id,
+        ScheduleSlot.start_time >= start,
+        ScheduleSlot.start_time <= end,
+        ScheduleSlot.is_available == False
+    ).first():
+        flash('Нельзя очистить: в этом месяце есть подтверждённые записи.', 'error')
+        return redirect(url_for('admin.manage_schedule', doctor_id=doctor_id))
+
+    # Удаляем только слоты за указанный месяц
+    deleted_count = ScheduleSlot.query.filter(
+        ScheduleSlot.doctor_id == doctor_id,
+        ScheduleSlot.start_time >= start,
+        ScheduleSlot.start_time <= end
+    ).delete()
+    
+    db.session.commit()
+    log_action('CLEAR_SCHEDULE', f'Админ {current_user.username} очистил расписание врача {doctor.username} на {month} ({deleted_count} слотов)')
+    flash(f'Расписание за {month} очищено. Удалено {deleted_count} свободных слотов.', 'warning')
     return redirect(url_for('admin.manage_schedule', doctor_id=doctor_id))

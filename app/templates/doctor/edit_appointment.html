@@ -5,15 +5,19 @@
 
 <form method="post" style="max-width: 600px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    
+
     <div style="margin-bottom: 15px;">
         <label for="diagnosis" style="display: block; font-weight: bold;">Диагноз:</label>
-        <textarea id="diagnosis" name="diagnosis" rows="3" style="width: 100%;">{{ appointment.diagnosis or '' }}</textarea>
+        <textarea id="diagnosis" name="diagnosis" 
+                  style="width: 100%; min-height: 80px; height: auto; overflow: hidden; resize: none; box-sizing: border-box; padding: 8px; font-size: 14px;"
+                  oninput="autoResize(this)">{{ appointment.diagnosis or '' }}</textarea>
     </div>
-    
+
     <div style="margin-bottom: 15px;">
         <label for="prescription" style="display: block; font-weight: bold;">Назначения и рекомендации:</label>
-        <textarea id="prescription" name="prescription" rows="5" style="width: 100%;">{{ appointment.prescription or '' }}</textarea>
+        <textarea id="prescription" name="prescription" 
+                  style="width: 100%; min-height: 150px; height: auto; overflow: hidden; resize: none; box-sizing: border-box; padding: 8px; font-size: 14px;"
+                  oninput="autoResize(this)">{{ appointment.prescription or '' }}</textarea>
     </div>
 
     <div style="margin-bottom: 15px;">
@@ -28,4 +32,17 @@
     <button type="submit" class="btn" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Сохранить данные</button>
     <a href="{{ url_for('doctor.dashboard') }}" style="margin-left: 10px;">Отмена</a>
 </form>
+
+<script>
+    // Функция динамического изменения высоты
+    function autoResize(el) {
+        el.style.height = 'auto'; // Сбрасываем высоту, чтобы элемент мог уменьшиться
+        el.style.height = el.scrollHeight + 'px'; // Устанавливаем высоту по содержимому
+    }
+
+    // Запуск при загрузке страницы для уже заполненных полей
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('textarea[oninput="autoResize(this)"]').forEach(el => autoResize(el));
+    });
+</script>
 {% endblock %}
